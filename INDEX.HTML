@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Online Store</title>
+
+<style>
+body{
+font-family:Arial;
+margin:0;
+background:#A9BCC2;
+}
+header{background:#111;color:white;padding:15px;text-align:center}
+.top{display:flex;justify-content:space-between;padding:10px;background:white;flex-wrap:wrap}
+input,select{padding:8px;margin:5px}
+button{padding:8px 12px;cursor:pointer;border:none;border-radius:5px;background:#111;color:white}
+.container{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;padding:20px}
+.card{background:white;padding:15px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);text-align:center}
+.card img{width:100%;height:200px;object-fit:cover;border-radius:10px}
+.price{color:#1e7d32;font-weight:bold}
+.cart-box{position:fixed;top:0;right:-400px;width:350px;height:100%;background:white;box-shadow:-4px 0 8px rgba(0,0,0,0.2);padding:20px;overflow:auto;transition:0.4s;z-index:1000}
+.cart-box.active{right:0}
+.float-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:999}
+.float-btn{width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;text-decoration:none}
+.whatsapp-float{background:#25D366}
+.call-float{background:#007BFF}
+.admin{display:none;padding:15px;background:white;margin:15px;border-radius:12px}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>My Online Store</h2>
+</header>
+
+<div class="top">
+<div>
+<input type="text" id="search" placeholder="Search..." onkeyup="displayProducts()">
+<select id="categoryFilter" onchange="displayProducts()">
+<option value="">All Categories</option>
+</select>
+</div>
+<div>
+<button onclick="toggleCart()">🛒 Cart</button>
+<button onclick="adminLogin()">Admin</button>
+</div>
+</div>
+
+<div class="admin" id="adminPanel">
+<h3>Add Product</h3>
+<input type="text" id="pname" placeholder="Product Name"><br>
+<input type="number" id="pprice" placeholder="Price"><br>
+<input type="text" id="pcategory" placeholder="Category"><br>
+<input type="file" id="pimage"><br><br>
+<button onclick="addProduct()">Add Product</button>
+</div>
+
+<div class="container" id="productContainer"></div>
+
+<div class="cart-box" id="cartBox">
+<h3>Your Cart</h3>
+<div id="cartItems"></div>
+<h4 id="totalAmount"></h4>
+<button onclick="orderWhatsApp()">Order on WhatsApp</button>
+
+<h4>UPI Payment</h4>
+<p>Scan & Pay</p>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=yourupi@upi" width="150">
+</div>
+
+<div class="float-container">
+<a href="https://wa.me/918098232633" target="_blank" class="float-btn whatsapp-float">💬</a>
+<a href="tel:8098232633" class="float-btn call-float">📞</a>
+</div>
+
+<script>
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+function saveData(){
+localStorage.setItem("products",JSON.stringify(products));
+localStorage.setItem("cart",JSON.stringify(cart));
+}
+
+function displayProducts(){
+let container=document.getElementById("productContainer");
+container.innerHTML="";
+let search=document.getElementById("search").value.toLowerCase();
+let category=document.getElementById("categoryFilter").value;
+let categories=new Set();
+
+products.forEach((p,i)=>{
+categories.add(p.category);
+if(p.name.toLowerCase().includes(search) && (category===""||p.category===category)){
+container.innerHTML+=`
+<div class="card">
+<img src="${p.image}">
+<h3>${p.name}</h3>
+<p class="price">₹${p.price}</p>
+<p>${p.category}</p>
+<button onclick="addToCart(${i})">Add to Cart</button>
+</div>`;
+}
+});
+
+let filter=document.getElementById("categoryFilter");
+filter.innerHTML='<option value="">All Categories</option>';
+categories.forEach(cat=>{filter.innerHTML+=`<option value="${cat}">${cat}</option>`});
+}
+
+function addProduct(){
+let name=document.getElementById("pname").value;
+let price=document.getElementById("pprice").value;
+let category=document.getElementById("pcategory").value;
+let file=document.getElementById("pimage").files[0];
+
+if(!file){ alert("Please select image"); return; }
+
+let reader=new FileReader();
+reader.onload=function(){
+products.push({name,price,category,image:reader.result});
+saveData();
+displayProducts();
+alert("Product Added");
+}
+reader.readAsDataURL(file);
+}
+
+function addToCart(index){
+cart.push(products[index]);
+saveData();
+alert("Added to Cart");
+}
+
+function toggleCart(){
+document.getElementById("cartBox").classList.toggle("active");
+displayCart();
+}
+
+function displayCart(){
+let items=document.getElementById("cartItems");
+items.innerHTML="";
+let total=0;
+cart.forEach((c,i)=>{
+total+=parseInt(c.price);
+items.innerHTML+=`<p>${c.name} - ₹${c.price}</p>`;
+});
+document.getElementById("totalAmount").innerText="Total: ₹"+total;
+}
+
+function orderWhatsApp(){
+let message="Order Details:%0A";
+let total=0;
+cart.forEach(c=>{
+message+=`${c.name} - ₹${c.price}%0A`;
+total+=parseInt(c.price);
+});
+message+="Total: ₹"+total;
+window.open(`https://wa.me/918098232633?text=${message}`);
+}
+
+function adminLogin(){
+let pass=prompt("Enter Password");
+if(pass==="1234"){
+document.getElementById("adminPanel").style.display="block";
+}else{
+alert("Wrong Password");
+}
+}
+
+displayProducts();
+</script>
+
+</body>
+</html>
